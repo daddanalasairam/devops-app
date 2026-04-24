@@ -1,0 +1,28 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy to server
+        run: |
+          echo "$SSH_KEY" > key.pem
+          chmod 400 key.pem
+          ssh -o StrictHostKeyChecking=no -i key.pem $SERVER_USER@$SERVER_IP << 'EOF'
+            sudo rm -rf /usr/share/nginx/html/*
+            echo "<h1>Deployed from GitHub Actions 🚀</h1>" | sudo tee /usr/share/nginx/html/index.html
+            sudo systemctl restart nginx
+          EOF
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
